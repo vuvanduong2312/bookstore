@@ -1,0 +1,21 @@
+name: Deploy Bookstore
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy qua SSH vào Windows
+        uses: appleboy/ssh-action@master
+        with:
+          host: 192.168.1.100           # BƯỚC 9 sẽ sửa lại đúng IP máy bạn
+          username: TenUserWindows      # tên user Windows của bạn
+          password: ${{ secrets.WIN_PASS }}
+          port: 22
+          script: |
+            cd "D:\\bookstore"        # BƯỚC 8 sẽ sửa đúng đường dẫn
+            git pull
+            docker-compose up -d --build

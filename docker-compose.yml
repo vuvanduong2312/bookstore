@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    ports:
+      - "80:5000"       
+    volumes:
+      - .:/app
+      - ./instance:/app/instance
+      - ./uploads:/app/uploads
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=super_strong_key_123
+    restart: unless-stopped

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Cấu hình thanh toán - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-credit-card"></i> Cấu hình thanh toán</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Thông tin tài khoản ngân hàng</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Thông tin này sẽ được sử dụng để tạo mã QR thanh toán cho khách hàng. 
+                    Khách hàng không thể chỉnh sửa thông tin này.
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="bank_code" class="form-label">Ngân hàng <span class="text-danger">*</span></label>
+                        <select class="form-select" id="bank_code" name="bank_code" required>
+                            <option value="">-- Chọn ngân hàng --</option>
+                            {% for code, name in bank_codes.items() %}
+                            <option value="{{ code }}" {% if config and config.bank_code == code %}selected{% endif %}>
+                                {{ name }} ({{ code }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="bank_name" class="form-label">Tên ngân hàng (tùy chọn)</label>
+                        <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                               value="{{ config.bank_name if config else '' }}"
+                               placeholder="Vietcombank, Techcombank...">
+                        <small class="text-muted">Nếu để trống, hệ thống sẽ tự điền theo ngân hàng đã chọn</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="account_number" class="form-label">Số tài khoản <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="account_number" name="account_number" 
+                               value="{{ config.account_number if config else '' }}"
+                               required placeholder="1234567890">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="account_name" class="form-label">Tên chủ tài khoản <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="account_name" name="account_name" 
+                               value="{{ config.account_name if config else '' }}"
+                               required placeholder="NGUYEN VAN A">
+                        <small class="text-muted">Viết HOA không dấu (theo thông tin trên thẻ ngân hàng)</small>
+                    </div>
+
+                    {% if config %}
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> Xem trước thông tin hiển thị:</h6>
+                        <p class="mb-1"><strong>Ngân hàng:</strong> {{ config.bank_name }} ({{ config.bank_code }})</p>
+                        <p class="mb-1"><strong>Số tài khoản:</strong> {{ config.account_number }}</p>
+                        <p class="mb-0"><strong>Chủ tài khoản:</strong> {{ config.account_name }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Lưu cấu hình
+                        </button>
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tự động điền tên ngân hàng khi chọn mã ngân hàng
+document.getElementById('bank_code').addEventListener('change', function() {
+    const bankNameInput = document.getElementById('bank_name');
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (selectedOption.value && !bankNameInput.value) {
+        const bankName = selectedOption.text.split('(')[0].trim();
+        bankNameInput.value = bankName;
+    }
+});
+</script>
+{% endblock %}

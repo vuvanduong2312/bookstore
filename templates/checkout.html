@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Thanh toán - Nhà Sách Online{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-credit-card"></i> Thanh toán</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Thông tin giao hàng</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.checkout') }}">
+                    {% if addresses %}
+                    <div class="mb-3">
+                        <label class="form-label">Chọn địa chỉ giao hàng</label>
+                        <select class="form-select" id="address_select" name="address_id" onchange="fillAddress()">
+                            <option value="">-- Nhập địa chỉ mới --</option>
+                            {% for addr in addresses %}
+                            <option value="{{ addr.id }}" 
+                                    data-name="{{ addr.recipient_name }}"
+                                    data-phone="{{ addr.phone }}"
+                                    data-address="{{ addr.address }}"
+                                    {% if addr.is_default %}selected{% endif %}>
+                                {{ addr.label or 'Địa chỉ' }} - {{ addr.recipient_name }} - {{ addr.phone }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                            <a href="{{ url_for('auth.add_address') }}" target="_blank">
+                                <i class="fas fa-plus"></i> Thêm địa chỉ mới
+                            </a>
+                        </small>
+                    </div>
+                    <hr class="my-4">
+                    {% else %}
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i> Bạn chưa có địa chỉ giao hàng nào được lưu.
+                    </div>
+                    <div class="mb-3 text-center">
+                        <a href="{{ url_for('auth.add_address') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus"></i> Thêm địa chỉ giao hàng
+                        </a>
+                        <p class="text-muted mt-3 mb-0">
+                            Vui lòng thêm địa chỉ giao hàng để tiếp tục đặt hàng
+                        </p>
+                    </div>
+                    <hr class="my-4">
+                    {% endif %}
+                    
+                    {% if addresses %}
+                    <div id="manual_address_fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="shipping_name" class="form-label">Họ tên người nhận</label>
+                            <input type="text" class="form-control" id="shipping_name" name="shipping_name" 
+                                   value="{{ user.name }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="shipping_phone" class="form-label">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="shipping_phone" name="shipping_phone" 
+                                   value="{{ user.phone }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="shipping_address" class="form-label">Địa chỉ giao hàng</label>
+                            <textarea class="form-control" id="shipping_address" name="shipping_address" 
+                                      rows="3"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">Phương thức thanh toán</label>
+                        <select class="form-select" id="payment_method" name="payment_method">
+                            <option value="COD">Thanh toán khi nhận hàng (COD)</option>
+                            <option value="Bank Transfer">Chuyển khoản ngân hàng</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-check"></i> Xác nhận đặt hàng
+                    </button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Đơn hàng của bạn</h5>
+            </div>
+            <div class="card-body">
+                {% for item in cart_items %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>{{ item.book.title }} × {{ item.quantity }}</span>
+                    <span>{{ "{:,.0f}".format(item.subtotal) }} đ</span>
+                </div>
+                {% endfor %}
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <strong>Tổng cộng:</strong>
+                    <strong class="text-primary">{{ "{:,.0f}".format(total) }} đ</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- QR Preview Section -->
+        {% if payment_config and qr_preview_url %}
+        <div class="card" id="qr_preview" style="display: none;">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-qrcode"></i> Quét mã QR thanh toán</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ qr_preview_url }}" alt="QR Code" class="img-fluid mb-3" style="max-width: 250px;">
+                
+                <div class="alert alert-info mb-3">
+                    <small>
+                        <strong>Thông tin chuyển khoản:</strong><br>
+                        <i class="fas fa-university"></i> {{ payment_config.bank_name }}<br>
+                        <i class="fas fa-credit-card"></i> STK: <strong id="account_preview">{{ payment_config.account_number }}</strong>
+                        <button type="button" class="btn btn-sm btn-outline-primary ms-1" onclick="copyToClipboard('account_preview')">
+                            <i class="fas fa-copy"></i>
+                        </button><br>
+                        <i class="fas fa-user"></i> {{ payment_config.account_name }}<br>
+                        <i class="fas fa-money-bill-wave"></i> Số tiền: <strong id="amount_preview">{{ "{:,.0f}".format(total) }} đ</strong>
+                        <button type="button" class="btn btn-sm btn-outline-primary ms-1" onclick="copyToClipboard('amount_preview')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </small>
+                </div>
+                
+                <p class="text-muted small mb-0">
+                    <i class="fas fa-info-circle"></i> Quét mã QR hoặc chuyển khoản theo thông tin trên. 
+                    Sau khi đặt hàng, bạn có thể xem lại mã QR trong chi tiết đơn hàng.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Toggle QR preview based on payment method
+function toggleQRPreview() {
+    const paymentMethod = document.getElementById('payment_method').value;
+    const qrPreview = document.getElementById('qr_preview');
+    
+    if (qrPreview) {
+        if (paymentMethod === 'Bank Transfer') {
+            qrPreview.style.display = 'block';
+        } else {
+            qrPreview.style.display = 'none';
+        }
+    }
+}
+
+// Copy text to clipboard
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.innerText;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success feedback
+        const originalHTML = element.innerHTML;
+        element.innerHTML = '<i class="fas fa-check text-success"></i>';
+        setTimeout(function() {
+            element.innerHTML = originalHTML;
+        }, 1000);
+    }).catch(function(err) {
+        alert('Không thể sao chép: ' + err);
+    });
+}
+
+// Fill address fields when selecting from saved addresses
+function fillAddress() {
+    const select = document.getElementById('address_select');
+    const selectedOption = select.options[select.selectedIndex];
+    const manualFields = document.getElementById('manual_address_fields');
+    
+    const nameInput = document.getElementById('shipping_name');
+    const phoneInput = document.getElementById('shipping_phone');
+    const addressInput = document.getElementById('shipping_address');
+    
+    if (selectedOption.value) {
+        // Hide manual input fields
+        manualFields.style.display = 'none';
+        
+        // Fill from selected address
+        nameInput.value = selectedOption.dataset.name || '';
+        phoneInput.value = selectedOption.dataset.phone || '';
+        addressInput.value = selectedOption.dataset.address || '';
+        
+        // Remove required attribute as we're using saved address
+        nameInput.removeAttribute('required');
+        phoneInput.removeAttribute('required');
+        addressInput.removeAttribute('required');
+    } else {
+        // Show manual input fields
+        manualFields.style.display = 'block';
+        
+        // Clear fields for manual entry
+        nameInput.value = '{{ user.name }}';
+        phoneInput.value = '{{ user.phone }}';
+        addressInput.value = '';
+        
+        // Add required attribute for manual entry
+        nameInput.setAttribute('required', 'required');
+        phoneInput.setAttribute('required', 'required');
+        addressInput.setAttribute('required', 'required');
+    }
+}
+
+// Auto-fill default address on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('address_select');
+    if (select) {
+        fillAddress();
+    }
+    
+    // Add event listener for payment method change
+    const paymentMethod = document.getElementById('payment_method');
+    if (paymentMethod) {
+        paymentMethod.addEventListener('change', toggleQRPreview);
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const addressSelect = document.getElementById('address_select');
+    const name = document.getElementById('shipping_name').value.trim();
+    const phone = document.getElementById('shipping_phone').value.trim();
+    const address = document.getElementById('shipping_address').value.trim();
+    
+    // If no address selected and fields are empty
+    if ((!addressSelect || !addressSelect.value) && (!name || !phone || !address)) {
+        e.preventDefault();
+        alert('Vui lòng chọn địa chỉ hoặc nhập đầy đủ thông tin giao hàng!');
+        return false;
+    }
+    
+    return true;
+});
+</script>
+
+{% endblock %}
