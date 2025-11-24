@@ -1,4 +1,4 @@
-name: Deploy Bookstore
+name: Auto Deploy to Windows
 
 on:
   push:
@@ -8,14 +8,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy qua SSH vào Windows
+      - name: SSH vào Windows và cập nhật web
         uses: appleboy/ssh-action@master
         with:
-          host: 192.168.1.100           # BƯỚC 9 sẽ sửa lại đúng IP máy bạn
-          username: TenUserWindows      # tên user Windows của bạn
-          password: ${{ secrets.WIN_PASS }}
+          host: 192.168.1.102                 # IP máy bạn
+          username: vu van duong               # tên user Windows 
+          password: ${{ secrets.WIN_PASS }}    # mật khẩu Windows bạn sẽ tạo secret
           port: 22
           script: |
-            cd "D:\\bookstore"        # BƯỚC 8 sẽ sửa đúng đường dẫn
+            cd "D:\Class1"                     # thư mục dự án của bạn
             git pull
-            docker-compose up -d --build
+            docker-compose down                # dừng container cũ
+            docker-compose up -d --build       # build lại + chạy ngầm
+            echo "Deploy thành công lúc $(date)"
