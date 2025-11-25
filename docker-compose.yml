@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    image: duong2312/bookstore:latest
     ports:
       - "80:5000"       
     volumes:

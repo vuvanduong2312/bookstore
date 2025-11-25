@@ -13,7 +13,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: vuvanduong2312
+          username: duong2312
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push image
@@ -21,4 +21,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: vuvanduong2312/bookstore:latest
+          tags: duong2312/bookstore:latest
