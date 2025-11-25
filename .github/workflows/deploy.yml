@@ -1,23 +1,24 @@
-name: Auto Deploy to Windows
+name: Build & Push Docker Image to Docker Hub
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH vào Windows và cập nhật web
-        uses: appleboy/ssh-action@master
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          host: 192.168.1.102                 # IP máy bạn
-          username: vu van duong               # tên user Windows 
-          password: ${{ secrets.WIN_PASS }}    # mật khẩu Windows bạn sẽ tạo secret
-          port: 22
-          script: |
-            cd "D:\Class1"                     # thư mục dự án của bạn
-            git pull
-            docker-compose down                # dừng container cũ
-            docker-compose up -d --build       # build lại + chạy ngầm
-            echo "Deploy thành công lúc $(date)"
+          username: vuvanduong2312
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: vuvanduong2312/bookstore:latest
